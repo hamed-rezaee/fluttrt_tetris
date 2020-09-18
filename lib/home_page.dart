@@ -10,14 +10,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<int> currentBlock = blocks[0];
+  Direction _direction = Direction.noune;
+  List<int> _currentBlock = blocks[Random().nextInt(blocks.length)];
+  List<int> _previousBlocks = [];
 
   @override
   void initState() {
     super.initState();
 
-    Timer.periodic(Duration(milliseconds: 5000), (_) {
-      currentBlock = _getBloc();
+    Timer.periodic(Duration(milliseconds: 300), (_) {
+      _moveBlock();
+
+      if (_checkCollosion()) {
+        _previousBlocks.addAll(_currentBlock);
+
+        _currentBlock = _getBloc();
+      }
+
       setState(() {});
     });
   }
@@ -37,7 +46,10 @@ class _HomePageState extends State<HomePage> {
                     crossAxisCount: 10,
                   ),
                   itemBuilder: (BuildContext context, int index) {
-                    for (final int component in currentBlock)
+                    for (final int component in _currentBlock)
+                      if (component == index) return Pixel(color: Colors.white);
+
+                    for (final int component in _previousBlocks)
                       if (component == index) return Pixel(color: Colors.white);
 
                     return Pixel(color: Colors.grey[900]);
@@ -58,11 +70,11 @@ class _HomePageState extends State<HomePage> {
                         ),
                         RaisedButton(
                           child: Icon(Icons.arrow_left),
-                          onPressed: () {},
+                          onPressed: () => _direction = Direction.left,
                         ),
                         RaisedButton(
                           child: Icon(Icons.arrow_right),
-                          onPressed: () {},
+                          onPressed: () => _direction = Direction.right,
                         ),
                         RaisedButton(
                           child: Icon(Icons.rotate_left),
@@ -82,12 +94,59 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-  List<int> _getBloc() => blocks[Random().nextInt(4)];
+  List<int> _getBloc() => blocks[Random().nextInt(blocks.length)];
+
+  void _moveBlock() {
+    switch (_direction) {
+      case Direction.noune:
+        for (int i = 0; i < _currentBlock.length; i++) {
+          _currentBlock[i] += 10;
+        }
+
+        break;
+      case Direction.left:
+        for (int i = 0; i < _currentBlock.length; i++) {
+          _currentBlock[i] -= 1;
+
+          _direction = Direction.noune;
+        }
+
+        break;
+      case Direction.right:
+        for (int i = 0; i < _currentBlock.length; i++) {
+          _currentBlock[i] += 1;
+
+          _direction = Direction.noune;
+        }
+
+        break;
+    }
+  }
+
+  bool _checkCollosion() {
+    if (_currentBlock.reduce(max) + 10 > 140) {
+      return true;
+    }
+
+    for (final int component in _currentBlock) {
+      if (_previousBlocks.contains(component + 10)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
 
 final List<List<int>> blocks = [
   [4, 5, 14, 15],
-  [4, 14, 24, 25],
-  [4, 13, 14, 15, 24],
+  [5, 15, 25, 26],
+  [5, 14, 15, 16, 25],
   [3, 4, 5, 6],
 ];
+
+enum Direction {
+  noune,
+  right,
+  left,
+}
