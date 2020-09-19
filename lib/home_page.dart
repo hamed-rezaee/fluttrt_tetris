@@ -10,25 +10,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Direction _direction = Direction.noune;
-  List<int> _currentBlock = blocks[Random().nextInt(blocks.length)];
-  List<int> _previousBlocks = [];
+  List<int> _currentBlock;
+  Direction _direction;
+  List<int> _previousBlocks;
+
+  Timer _gameTimer;
+
+  bool gameOver = false;
 
   @override
   void initState() {
     super.initState();
 
-    Timer.periodic(Duration(milliseconds: 300), (_) {
-      _moveBlock();
-
-      if (_checkCollosion()) {
-        _previousBlocks.addAll(_currentBlock);
-
-        _currentBlock = _getBloc();
-      }
-
-      setState(() {});
-    });
+    _restart();
   }
 
   @override
@@ -47,7 +41,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   itemBuilder: (BuildContext context, int index) {
                     for (final int component in _currentBlock)
-                      if (component == index) return Pixel(color: Colors.white);
+                      if (component == index) return Pixel(color: Colors.red);
 
                     for (final int component in _previousBlocks)
                       if (component == index) return Pixel(color: Colors.white);
@@ -66,7 +60,7 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         RaisedButton(
                           child: Icon(Icons.settings_backup_restore),
-                          onPressed: () {},
+                          onPressed: _restart,
                         ),
                         RaisedButton(
                           child: Icon(Icons.arrow_left),
@@ -94,7 +88,36 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-  List<int> _getBloc() => blocks[Random().nextInt(blocks.length)];
+  List<int> _getBloc() => List.from(blocks[Random().nextInt(blocks.length)]);
+
+  void _restart() {
+    _currentBlock =
+        _getBloc().map((final int element) => element - 10).toList();
+    _direction = Direction.noune;
+    _previousBlocks = [];
+
+    _gameTimer?.cancel();
+
+    _gameTimer = Timer.periodic(Duration(milliseconds: 500), (Timer timer) {
+      if (_checkCollision()) {
+        _previousBlocks.addAll(List.from(_currentBlock));
+
+        if (_currentBlock.reduce(min) < 10) {
+          gameOver = true;
+        }
+
+        if (gameOver) {
+          timer.cancel();
+        } else {
+          _currentBlock = _getBloc();
+        }
+      } else {
+        _moveBlock();
+      }
+
+      setState(() {});
+    });
+  }
 
   void _moveBlock() {
     switch (_direction) {
@@ -123,7 +146,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  bool _checkCollosion() {
+  bool _checkCollision() {
     if (_currentBlock.reduce(max) + 10 > 140) {
       return true;
     }
@@ -140,7 +163,7 @@ class _HomePageState extends State<HomePage> {
 
 final List<List<int>> blocks = [
   [4, 5, 14, 15],
-  [5, 15, 25, 26],
+  [4, 14, 24, 25],
   [5, 14, 15, 16, 25],
   [3, 4, 5, 6],
 ];
